@@ -1,0 +1,106 @@
+/* styles.css */
+
+/* 样式类1，使用background_1.jpg作为背景图片 */
+.background-1 {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+    background-image: url('element/background_1.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* 样式类2，使用background_2.jpg作为背景图片 */
+.background-2 {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+    background-image: url('element/background_2.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+    background-image: url('element//background_2.jpg'); 
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+header {
+    color: #070707;
+    padding: 20px;
+    text-align: center;
+}
+
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.8);
+    transition: background-color 0.3s ease;
+}
+
+.sinking-box {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    margin-top: 20px;
+    transition: transform 0.3s ease;
+    font-size: 20px;
+    color: #0b0b0b;
+    overflow: auto;
+}
+
+.sinking-box:hover {
+    transform: translateY(5px);
+}
+
+h1 {
+    font-size: 28px;
+}
+
+p {
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    margin: 10px 0;
+    margin: 0 auto;
+    display: block;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 9px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 2em;
+    color: transparent;
+    display: inline-block;
+    overflow: hidden;
+}
+
+header h1 span {
+    animation: revealTitle 2.4s forwards;
+}
+
+@keyframes revealTitle {
+    to {
+        color: #080808;
+    }
+}

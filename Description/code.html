@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>代码文件</title>
+</head>
+
+<body>
+    <div id="audio-record-code">
+        <pre>
+                import os
+                import wave
+                import tkinter
+                import pyaudio
+        
+                def recording_function():#录音函数
+                    #获取录音时长
+                    duration=int(duration_var.get())
+                    #定义录音参数
+                    CHUNK=1024 #每个缓存区的大小
+                    FORMAT=pyaudio.paInt16 #采样位数
+                    CHANNELS=1 #单声道
+                    RATE=44100 #采样率
+                    RECORD_SECONDS=duration #录音时长
+                    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                    WAVE_OUTPUT_FILEMAME = os.path.join(desktop_path, "output.wav") #输出文件
+                    #创建一个对象
+                    audio=pyaudio.PyAudio()
+                    
+                    #打开音频流
+                    stream=audio.open(format=FORMAT,channels=CHANNELS,rate=RATE,input=True,frames_per_buffer=CHUNK)
+                    #创建一个空列表用于储存录音数据
+                    frames=[]
+                    
+                    #录音
+                    for i in range(0,int(RATE/CHUNK*(RECORD_SECONDS+1))):
+                    data=stream.read(CHUNK)
+                    frames.append(data)
+                    
+                    #关闭音频流
+                    stream.stop_stream()
+                    stream.close()
+                    audio.terminate()
+                    
+                    #将录音数据保存为wav文件
+                    wave_file=wave.open(WAVE_OUTPUT_FILEMAME,'wb')
+                    wave_file.setnchannels(CHANNELS)
+                    wave_file.setsampwidth(audio.get_sample_size(FORMAT))
+                    wave_file.setframerate(RATE)
+                    wave_file.writeframes(b''.join(frames))
+                    wave_file.close()
+                    
+                    #显示文件保存路径
+                    filepath_var.set(os.path.abspath(WAVE_OUTPUT_FILEMAME))
+                
+                def recording_interface():
+                    window=tkinter.Toplevel()
+                    window['background']='white'
+                    window.title("录音程序")
+                    window.geometry("400x200")
+                    window.resizable(0,0)
+                    
+                    #添加录音时长输入框
+                    global duration_var
+                    duration_var=tkinter.StringVar(value="5")
+                    I0=tkinter.Button(window,text='录音时长设置')
+                    I0.place(x=50,y=20)
+                    I1=tkinter.Entry(window,textvariable=duration_var,justify='center')
+                    I1.place(x=150,y=24)
+                    
+                    #添加开始录音按钮
+                    I2=tkinter.Button(window,text="开始录音",command=recording_function,activebackground='blue')
+                    I2.place(x=50,y=70)
+                    I3=tkinter.Button(window,text="文件保存目录")
+                    I3.place(x=50,y=120)
+                    
+                    #添加文件保存路径标签
+                    global filepath_var
+                    filepath_var=tkinter.StringVar(value="")
+                    I4=tkinter.Entry(window,textvariable=filepath_var)
+                    I4.place(x=150,y=124)
+                
+                window.mainloop()
+            </pre>
+    </div>
+
+    <div id="audio-play-code">
+        <pre>
+            import wave
+            import pyaudio
+            import tkinter as tk
+            import time
+        
+            class AudioPlayer:
+                def audioPlayer_interface(self, file_path):
+                    self.window = tk.Tk()
+                    self.window.title("播放")
+                    self.window.geometry("200x100")
+                    self.window.resizable(0, 0)
+                    self.window.configure(bg="white")
+                    self.window.iconbitmap("E:\\002.ico")
+                    
+                    self.audio = pyaudio.PyAudio()
+                    self.stream = None
+                    self.playing = False
+                    self.current_frame = 0
+                    self.start_time = None # 用于记录播放开始的时间
+                    
+                    self.wave_file = wave.open(file_path, 'rb')
+                    self.play_button = tk.Button(self.window, text="▶", height=1, width=2, activebackground='blue',
+                    command=self.toggle_play)
+                    self.play_button.place(x=60, y=10)
+                    self.stop_button = tk.Button(self.window, text="⏺", height=1, activebackground='blue', command=self.stop_play)
+                    self.stop_button.place(x=120, y=10)
+                    
+                    self.time_label = tk.Label(self.window, text="00:00", bg="white")
+                    self.time_label.place(x=82, y=60)
+                    self.window.mainloop()
+        
+                def toggle_play(self):
+                    if not self.playing:
+                        if not self.stream:
+                            self.stream = self.audio.open(
+                                format=self.audio.get_format_from_width(self.wave_file.getsampwidth()),
+                                channels=self.wave_file.getnchannels(),
+                                rate=self.wave_file.getframerate(),
+                                output=True
+                            )
+                            if self.current_frame == self.wave_file.getnframes():
+                                # 如果当前帧数等于音频总帧数，说明音频已经播放完，重新开始计数
+                                self.current_frame = 0
+                                self.start_time = time.time()
+                            else:
+                                # 如果没有播放完，从当前位置开始播放
+                                self.start_time = time.time() - (self.current_frame / self.wave_file.getframerate())
+                            self.playing = True
+                            self.play_button.config(text="❚❚")
+                            self.play_audio()
+                    else:
+                        self.playing = False
+                        self.play_button.config(text="▶")
+                        self.pause_audio()
+        
+                def play_audio(self):
+                    if self.stream and self.playing:
+                        self.wave_file.setpos(self.current_frame)
+                        data = self.wave_file.readframes(1024)
+                        if data:
+                            self.stream.write(data)
+                            self.current_frame += 1024
+                            elapsed_time = time.time() - self.start_time  # 计算已经播放的时间
+                            self.update_time(elapsed_time)
+                            self.window.after(10, self.play_audio)
+                        else:
+                            self.stop_play()
+        
+                def pause_audio(self):
+                    if self.stream and self.playing:
+                        self.stream.stop_stream()
+        
+                def stop_play(self):
+                    if self.stream:
+                        self.stream.stop_stream()
+                        self.stream.close()
+                        self.stream = None
+                    self.playing = False
+                    self.play_button.config(text="▶")
+        
+                def update_time(self, elapsed_time):
+                    seconds = int(elapsed_time)
+                    milliseconds = int((elapsed_time - seconds) * 1000)
+                    time_str = f"{seconds:02}.{milliseconds:03}"
+                    self.time_label.config(text=time_str)
+        
+            def audio_play(file_path):
+                audio_player = AudioPlayer()
+                audio_player.audioPlayer_interface(file_path=file_path)
+        </pre>
+    </div>
+</body>
+
+</html>

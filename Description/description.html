@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway:400,400i,700">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lora:400,400i,700">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.2/animate.min.css">
+    <link rel="stylesheet" href="styles.css">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字音效处理器</title>
+</head>
+
+<body>
+    <!--------------------- 主界面 --------------------->
+    <header>
+        <h1>数字音效处理器</h1>
+    </header>
+    <div class="container" id="container">
+        <h2>项目介绍</h2>
+        <p>数字音效处理器是一个基于软件的音效处理工具，旨在实现各种语音信号的音效处理。该项目有以下要求：</p>
+        <ul>
+            <li>输入语音信号源为实际环境采集的语音。</li>
+            <li>至少实现以下三种音效处理功能：</li>
+            <ol>
+                <li>强噪声下的语音降噪。</li>
+                <li>语音与音乐、语音与语音的混合分离。</li>
+                <li>项目组由5人组成的语音识别。</li>
+            </ol>
+            <li>鼓励设计并实现其他音效处理功能。</li>
+            <li>提供用户界面以进行人机交互，并支持扬声器/耳机输出音效。</li>
+        </ul>
+
+        <!-- 您可以在此添加更多项目细节和描述 -->
+
+        <h2>项目演示</h2>
+        <!-- 在此添加项目演示的图片、视频或其他媒体 -->
+        <ul>
+            <li>音频录制</li>
+            <li>音频播放</li>
+            <li>语音降噪</li>
+            <li>语音分离</li>
+            <li>语音识别</li>
+        </ul>
+
+
+        <h2>联系我们</h2>
+        <p>如有任何疑问或合作意向，请联系我们：</p>
+        <address>
+            邮箱：3111013462@qq.com<br>
+            电话：15138892159<br>
+        </address>
+    </div>
+
+    <!--------------------- 音频录制界面 --------------------->
+    
+    <div class="container" id="container">
+        <h2>音频录制</h2>
+        <p>导入模块</p>
+        <ul>
+            <li>os:用于获取路径</li>
+            <li>wave:用于处理.wav音频文件</li>
+            <li>tkinter:用于创建图形用户界面</li>
+            <li>pyaudio:用于音频播放</li>
+        </ul>
+        <p>创建函数</p>
+        <ul>
+            <li>recording_function:录音功能函数</li>
+            <li>recording_interface:录音交互界面设计</li>
+        </ul>
+        <p>相关代码</p>
+        <div class="sinking-box">
+            <iframe src="code.html#audio-record-code" frameborder="0" width="100%" height="300"></iframe>
+        </div>
+    </div>
+
+    <!--------------------- 音频播放界面 --------------------->
+    <div class="container" id="container">
+        <h2>音频播放</h2>
+        <p>导入模块</p>
+        <ul>
+            <li>time:用于处理时间</li>
+            <li>wave:用于处理.wav音频文件</li>
+            <li>tkinter:用于创建图形用户界面</li>
+            <li>pyaudio:用于音频播放</li>
+        </ul>
+        <p>创建函数</p>
+        <ul>
+            <li>stop_play:停止音频播放并关闭音频流</li>
+            <li>play_audio:在播放状态下，不断从音频文件中读取帧并通过音频流播放</li>
+            <li>toggle_play:处理播放按钮的点击事件，切换播放和暂停状态</li>
+            <li>update_time:更新界面上的已播放时间</li>
+            <li>pause_audio:暂停音频播放</li>
+            <li>audioPlayer_interface:创建用户界面，包括播放按钮、停止按钮和时间标签</li>
+        </ul>
+        <p>相关代码</p>
+        <div class="sinking-box">
+            <iframe src="code.html#audio-play-code" frameborder="0" width="100%" height="300"></iframe>
+        </div>
+    </div>
+
+
+
+
+    <!--------------------- 语音降噪界面 --------------------->
+    <header>
+        <h1>项目演示</h1>
+    </header>
+    <div class="container" id="container">
+        <h2>语音降噪</h2>
+        <div class="sinking-box">
+
+
+        </div>
+        
+    </div>
+
+
+    <!--------------------- 语音分离界面 --------------------->
+    <header>
+        <h1>项目演示</h1>
+    </header>
+    <div class="container" id="container">
+        <h2>语音分离</h2>
+        
+    </div>
+
+    <!--------------------- 语音识别界面 --------------------->
+    <header>
+        <h1>项目演示</h1>
+    </header>
+    <div class="container" id="container">
+        <h2>语音识别</h2>
+        
+    </div>
+    
+    <script>
+        //---------------------------------------------------------------------渐变效果
+        const container = document.getElementById("container");
+        window.addEventListener("scroll", () => {
+            // 根据滚动位置来调整透明度
+            const scrollY = window.scrollY;
+            const maxScroll = 500; // 根据需要调整最大滚动距离
+            const opacity = 0.8 - (scrollY / maxScroll) * 0.8; // 计算透明度
+            // 设置容器的透明度
+            container.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+        });
+
+        //---------------------------------------------------------------------标题渐出
+        window.addEventListener("load", function () {
+            let titleText = document.querySelector("header h1");
+            let letters = titleText.textContent.split("");
+            titleText.textContent = "";
+            let middle = letters.filter(e => e !== " ").length / 2;
+            letters.forEach((letter, i) => {
+                let span = document.createElement("span");
+                span.textContent = letter;
+                span.style.animationDelay = `${0.3 + Math.abs(i - middle) * 0.1}s`;
+                titleText.append(span);
+            });
+        });
+
+        //---------------------------------------------------------------------标题渐出
+        let glowInTexts = document.querySelectorAll(".glowIn");
+        glowInTexts.forEach(glowInText => {
+            let letters = glowInText.textContent.split("");
+            glowInText.textContent = "";
+            letters.forEach((letter, i) => {
+                let span = document.createElement("span");
+                span.textContent = letter;
+                span.style.animationDelay = `${i * 0.05}s`;
+                glowInText.append(span);
+            });
+        });
+
+
+
+    </script>
+</body>
+</html>

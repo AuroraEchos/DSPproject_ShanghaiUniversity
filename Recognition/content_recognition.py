@@ -15,8 +15,8 @@ api_get_result = '/getResult'
 
 class RequestApi(object):
     def __init__(self, upload_file_path):
-        appid="4a99b8bf"
-        secret_key="344e2137a4918553229881ec6c91b6e0"
+        appid=""
+        secret_key=""
         self.appid = appid
         self.secret_key = secret_key
         self.upload_file_path = upload_file_path

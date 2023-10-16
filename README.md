@@ -13,5 +13,5 @@
  *** 
  ## 用户界面
  ### <img src="https://github.com/AuroraEchos/DSPproject_ShanghaiUniversity/assets/105660769/9acd624f-06cb-4bb2-8693-f890604165ac" width="420px">
- ### <img src="https://github.com/AuroraEchos/DSPproject_ShanghaiUniversity/assets/105660769/4a581f01-3f8f-4f95-bcd7-865bb972277a" width="420px">
+ 
  

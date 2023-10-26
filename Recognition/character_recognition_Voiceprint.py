@@ -337,9 +337,9 @@ def decode(response):
 
 
 def save_scores_to_csv(test_audio_path, reference_audio_paths, output_file):
-    APPId = "4a99b8bf"
-    APISecret = "YjY5MTYwMzkwZDU5YWI3Y2NkYjY4Nzg5"
-    APIKey = "cd660d6d6314c04bfabe16c6a66e1a9a"
+    APPId = ""
+    APISecret = ""
+    APIKey = ""
 
     # 创建声纹特征库
     req_url(api_name='createGroup', APPId=APPId, APIKey=APIKey, APISecret=APISecret)

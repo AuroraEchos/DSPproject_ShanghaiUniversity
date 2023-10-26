@@ -110,7 +110,3 @@ def newaudio_process(new_audio_path):
     predicted_name = newaudio_predict(new_img_path=new_img_save)
 
     return predicted_name
-
-""" 
-new_audio_path = "C:\\Users\\Administrator\\Desktop\\testaudio\\Jiajia\\7.wav"
-print(newaudio_process(new_audio_path)) """

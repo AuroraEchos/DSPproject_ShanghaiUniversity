@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from scipy.io import wavfile
 
@@ -32,6 +33,8 @@ def save_noiseadd_file(source_file,_amplitude):
     noise=band_limited_noise(min_freq=4000, max_freq = 12000, samples=len(data), samplerate=rate,amplitude=_amplitude)
     noise_clip = noise[:rate*noise_len]
     audio_clip_band_limited = data+noise
-    output_wav_loc = "C:\\Users\\Administrator\\Desktop\\noise.wav"
+    desktop_path = os.path.expanduser('~') + '\\Desktop\\'
+    filename = 'noise_audio.wav'
+    output_wav_loc = desktop_path + filename
     audio_clip_band_limited_int = (audio_clip_band_limited * 32768).astype('int16')
     wavfile.write(output_wav_loc, rate, audio_clip_band_limited_int)

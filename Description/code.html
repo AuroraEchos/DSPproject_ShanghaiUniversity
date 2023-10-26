@@ -6,6 +6,8 @@
     <title>代码文件</title>
 </head>
 
+
+
 <body>
     <div id="audio-record-code">
         <pre>
@@ -84,7 +86,9 @@
                 window.mainloop()
             </pre>
     </div>
+</body>
 
+<body>
     <div id="audio-play-code">
         <pre>
             import wave
@@ -179,5 +183,705 @@
         </pre>
     </div>
 </body>
+
+<body>
+    <div id="audio-deniose-code">
+        <pre>
+            import os
+            import wave  
+            import math  
+            import numpy as np  
+            from scipy.special import expn  
+            import matplotlib.pyplot as plt  
+            from scipy.io.wavfile import read, write  
+            
+            
+            # 将音频数据转换为浮点数格式以便处理
+            def to_float(_input):
+                if _input.dtype == np.float64:
+                    return _input, _input.dtype
+                elif _input.dtype == np.float32:
+                    return _input.astype(np.float64), _input.dtype
+                elif _input.dtype == np.uint8:
+                    return (_input - 128) / 128., _input.dtype
+                elif _input.dtype == np.int16:
+                    return _input / 32768., _input.dtype
+                elif _input.dtype == np.int32:
+                    return _input / 2147483648., _input.dtype
+                raise ValueError('Unsupported wave file format, please contact the author')
+            
+            # 将浮点数数据还原为原始格式
+            def from_float(_input, dtype):
+                if dtype == np.float64:
+                    return _input, np.float64
+                elif dtype == np.float32:
+                    return _input.astype(np.float32)
+                elif dtype == np.uint8:
+                    return ((_input * 128) + 128).astype(np.uint8)
+                elif dtype == np.int16:
+                    return (_input * 32768).astype(np.int16)
+                elif dtype == np.int32:
+                    print(_input)
+                    return (_input * 2147483648).astype(np.int32)
+                raise ValueError('Unsupported wave file format, please contact the author')
+            
+            # 主要的音频降噪函数，接受音频数据、采样率和其他可选参数
+            def logmmse(data, sampling_rate, output_file=None, initial_noise=6, window_size=0, noise_threshold=0.15):
+                data, dtype = to_float(data)        # 将音频数据转换为浮点数
+                data += np.finfo(np.float64).eps    # 添加一个极小的值以避免除以零
+            
+                if data.ndim == 1:  # 如果是单声道音频
+                    output = mono_logmmse(data, sampling_rate, dtype, initial_noise, window_size, noise_threshold)
+                else:               # 如果是多通道音频
+                    output = []
+                    for _, m_input in enumerate(data.T):  # 遍历每个通道
+                        output.append(mono_logmmse(m_input, sampling_rate, dtype, initial_noise, window_size, noise_threshold))
+                    output = np.array(output)
+            
+                if output_file is not None:                      # 如果提供了输出文件名
+                    write(output_file, sampling_rate, output.T)  # 将处理后的音频写入文件
+            
+                return output.T  # 返回处理后的音频数据
+            
+            # 从文件中读取音频数据并应用logmmse降噪
+            def logmmse_from_file(input_file, output_file=None, initial_noise=6, window_size=0, noise_threshold=0.15):
+                sampling_rate, data = read(input_file, 'r') 
+                return logmmse(data, sampling_rate, output_file, initial_noise, window_size, noise_threshold)
+            
+            # 对单声道音频进行LogMMSE降噪
+            def mono_logmmse(m_input, fs, dtype, initial_noise=6, window_size=0, noise_threshold=0.15):
+                num_frames = len(m_input)
+                chunk_size = int(np.floor(60 * fs))
+                m_output = np.array([], dtype=dtype)
+                saved_params = None
+                frames_read = 0
+            
+                while frames_read < num_frames:
+                    frames = num_frames - frames_read if frames_read + chunk_size > num_frames else chunk_size
+                    signal = m_input[frames_read:frames_read + frames]
+                    frames_read = frames_read + frames
+                    _output, saved_params = _logmmse(signal, fs, initial_noise, window_size, noise_threshold, saved_params)
+                    m_output = np.concatenate((m_output, from_float(_output, dtype)))
+            
+                return m_output  # 返回处理后的音频数据
+            
+            # 实际执行LogMMSE降噪的内部函数
+            def _logmmse(x, Srate, noise_frames=6, Slen=0, eta=0.15, saved_params=None):
+                if Slen == 0:               # 如果未提供分析窗口长度，则默认使用20毫秒的分析窗口
+                    Slen = int(math.floor(0.02 * Srate))
+                if Slen % 2 == 1:           # 确保分析窗口长度为偶数
+                    Slen = Slen + 1
+                PERC = 50
+                len1 = int(math.floor(Slen * PERC / 100))
+                len2 = int(Slen - len1)
+                win = np.hanning(Slen)
+                win = win * len2 / np.sum(win)
+                nFFT = 2 * Slen
+                x_old = np.zeros(len1)
+                Xk_prev = np.zeros(len1)
+                Nframes = int(math.floor(len(x) / len2) - math.floor(Slen / len2))
+                xfinal = np.zeros(Nframes * len2)
+            
+                if saved_params is None:  # 如果未提供已保存的参数，初始化噪声均值估计
+                    noise_mean = np.zeros(nFFT)
+                    for j in range(0, Slen * noise_frames, Slen):
+                        noise_mean = noise_mean + np.absolute(np.fft.fft(win * x[j:j + Slen], nFFT, axis=0))
+                    noise_mu2 = (noise_mean / noise_frames) ** 2
+                else:
+                    noise_mu2 = saved_params['noise_mu2']
+                    Xk_prev = saved_params['Xk_prev']
+                    x_old = saved_params['x_old']
+                
+                aa = 0.98
+                mu = 0.98
+                ksi_min = 10 ** (-25 / 10)
+            
+                for k in range(0, Nframes * len2, len2):        # 遍历音频数据的每个帧
+                    insign = win * x[k:k + Slen]                # 分帧处理
+            
+                    spec = np.fft.fft(insign, nFFT, axis=0)     # 计算信号频谱
+                    sig = np.absolute(spec)
+                    sig2 = sig ** 2
+            
+                    gammak = np.minimum(sig2 / noise_mu2, 40)   # 估计信噪比（SNR）
+            
+                    if Xk_prev.all() == 0:
+                        ksi = aa + (1 - aa) * np.maximum(gammak - 1, 0)
+                    else:
+                        ksi = aa * Xk_prev / noise_mu2 + (1 - aa) * np.maximum(gammak - 1, 0)
+                        ksi = np.maximum(ksi_min, ksi)
+            
+                    log_sigma_k = gammak * ksi / (1 + ksi) - np.log(1 + ksi)    # 计算对数谱
+                    vad_decision = np.sum(log_sigma_k) / Slen                   # 基于VAD决策更新噪声估计
+            
+                    if vad_decision < eta:
+                        noise_mu2 = mu * noise_mu2 + (1 - mu) * sig2
+            
+                    A = ksi / (1 + ksi)
+                    vk = A * gammak
+                    ei_vk = 0.5 * expn(1, vk)
+                    hw = A * np.exp(ei_vk)
+                    sig = sig * hw
+                    Xk_prev = sig ** 2
+                    xi_w = np.fft.ifft(hw * spec, nFFT, axis=0)
+                    xi_w = np.real(xi_w)
+            
+                    xfinal[k:k + len2] = x_old + xi_w[0:len1]
+                    x_old = xi_w[len1:Slen]
+            
+                return xfinal, {'noise_mu2': noise_mu2, 'Xk_prev': Xk_prev, 'x_old': x_old}
+            
+            
+            
+            # 算法调用函数
+            def denoise(audio_path):
+                path = audio_path
+                f = wave.open(path, "rb")
+                params = f.getparams()
+                nchannels, sampwidth, framerate, nframes = params[:4]
+                data = f.readframes(nframes)
+                f.close()
+                data = np.frombuffer(data, dtype=np.short)
+            
+                data = logmmse(data=data, sampling_rate=framerate)  # 调用logmmse函数降噪
+            
+            
+                desktop_path = os.path.expanduser('~') + '\\Desktop\\'
+                filename = 'denoised_audio.wav'
+                file_save = desktop_path + filename
+                nframes = len(data)
+                f = wave.open(file_save, 'wb')
+                f.setparams((1, 2, framerate, nframes, 'NONE', 'NONE'))
+                f.writeframes(data)
+                f.close()
+            
+                return data
+        </pre>
+    </div>
+
+</body>
+
+<body>
+    <div id="audio-separation-code">
+        <pre>
+            import os
+            import winsound
+            import matplotlib
+            import numpy as np
+            from math import ceil
+            from scipy import signal
+            from scipy.io import wavfile
+            import matplotlib.pyplot as plt
+
+
+            def singleaudio_mergeseparation(file_1,file_2,output_filename):
+                #将两段音频进行合并
+                sample_rate_1, samples_1 = wavfile.read(file_1)
+                sample_rate_2, samples_2 = wavfile.read(file_2)
+                maxlength = max(len(samples_1),len(samples_2))
+                
+                samples_1 = np.pad(samples_1, (0, maxlength - len(samples_1)), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0, maxlength - len(samples_2)), 'constant', constant_values=(0))
+                mixed_series = samples_1 + samples_2
+                extrapadding = (ceil(len(mixed_series) / sample_rate_1) * sample_rate_1) - len(mixed_series)
+                mixed_series = np.pad(mixed_series, (0,extrapadding), 'constant', constant_values=(0))
+                samples_1 = np.pad(samples_1, (0,extrapadding), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0,extrapadding), 'constant', constant_values=(0))
+
+
+                #计算三段音频的短时傅里叶变换
+                nperseg = sample_rate_1 / 50
+                f1, t1, Zsamples1 = signal.stft(samples_1, fs=sample_rate_1, nperseg=nperseg)
+                f2, t2, Zsamples2 = signal.stft(samples_2, fs=sample_rate_1, nperseg=nperseg)
+                fmixed, tmixed, Zmixed_series = signal.stft(mixed_series, fs=sample_rate_1, nperseg=nperseg)
+
+
+                # 创建掩码并应用
+                Zsample = Zsamples2
+                denominator = np.abs(Zmixed_series)
+                numerator = np.abs(Zsample)
+                mask = np.zeros_like(denominator)
+                nonzero_indices = (denominator != 0)
+                mask[nonzero_indices] = np.around(numerator[nonzero_indices] / denominator[nonzero_indices], 0)
+                default_snr = -100  
+                mask[~nonzero_indices] = default_snr
+
+                # 将掩码应用于混合信号的时频表示
+                Zsamplesmaked = np.multiply(Zmixed_series, mask)
+
+                #将信号由频域恢复到时间域
+                _, samplesrec = signal.istft(Zsamplesmaked, sample_rate_1)
+
+                #将恢复的音频保存
+                wavfile.write(output_filename, sample_rate_1, np.asarray(samplesrec, dtype=np.int16)) 
+
+
+
+
+            def audio_separation(file_1,file_2):
+                desktop_path = os.path.expanduser('~') + '\\Desktop\\'
+                output_path = desktop_path
+                for i in range(2):
+                    input_1 = file_1 if i == 0 else file_2
+                    input_2 = file_2 if i == 0 else file_1
+                    output_filename = output_path + "recovered_" + str(2-i) + ".wav"
+                    singleaudio_mergeseparation(input_1, input_2, output_filename)
+
+
+            ---------------------------------------------------------------------
+            import os
+            import numpy as np
+            from math import ceil
+            from scipy.io import wavfile
+            import matplotlib.pyplot as plt
+            
+            
+            def merge_files(file_1,file_2):
+                sample_rate_1, samples_1 = wavfile.read(file_1)
+                sample_rate_2, samples_2 = wavfile.read(file_2)
+                maxlength = max(len(samples_1),len(samples_2))
+                samples_1 = np.pad(samples_1, (0, maxlength - len(samples_1)), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0, maxlength - len(samples_2)), 'constant', constant_values=(0))
+                mixed_series = samples_1 + samples_2
+                extrapadding = (ceil(len(mixed_series) / sample_rate_1) * sample_rate_1) - len(mixed_series)
+                mixed_series = np.pad(mixed_series, (0,extrapadding), 'constant', constant_values=(0))
+                samples_1 = np.pad(samples_1, (0,extrapadding), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0,extrapadding), 'constant', constant_values=(0))
+            
+            
+                desktop_path = os.path.expanduser('~') + '\\Desktop\\'
+                filename = 'mixed.wav'
+                output_wav_loc = desktop_path + filename
+                wavfile.write(output_wav_loc, sample_rate_1, np.asarray(mixed_series, dtype=np.int16))
+
+                
+            ---------------------------------------------------------------------
+            import os
+            import winsound
+            import matplotlib
+            import numpy as np
+            from math import ceil
+            from scipy import signal
+            from scipy.io import wavfile
+            import matplotlib.pyplot as plt
+
+            matplotlib.rc("font", family='SimHei')
+            matplotlib.rcParams['axes.unicode_minus'] = False
+
+
+            def separation_plot_1(file_1,file_2):
+                #将两段音频进行合并
+                sample_rate_1, samples_1 = wavfile.read(file_1)
+                sample_rate_2, samples_2 = wavfile.read(file_2)
+                maxlength = max(len(samples_1),len(samples_2))
+                samples_1 = np.pad(samples_1, (0, maxlength - len(samples_1)), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0, maxlength - len(samples_2)), 'constant', constant_values=(0))
+                mixed_series = samples_1 + samples_2
+                extrapadding = (ceil(len(mixed_series) / sample_rate_1) * sample_rate_1) - len(mixed_series)
+                mixed_series = np.pad(mixed_series, (0,extrapadding), 'constant', constant_values=(0))
+                samples_1 = np.pad(samples_1, (0,extrapadding), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0,extrapadding), 'constant', constant_values=(0))
+
+                #计算三段音频的短时傅里叶变换
+                nperseg = sample_rate_1 / 50
+                f1, t1, Zsamples1 = signal.stft(samples_1, fs=sample_rate_1, nperseg=nperseg)
+                f2, t2, Zsamples2 = signal.stft(samples_2, fs=sample_rate_1, nperseg=nperseg)
+                fmixed, tmixed, Zmixed_series = signal.stft(mixed_series, fs=sample_rate_1, nperseg=nperseg)
+
+                # 创建掩码并应用
+                Zsample = Zsamples2
+                sample = samples_2
+                denominator = np.abs(Zmixed_series)
+                numerator = np.abs(Zsample)
+                mask = np.zeros_like(denominator)
+                nonzero_indices = (denominator != 0)
+                mask[nonzero_indices] = np.around(numerator[nonzero_indices] / denominator[nonzero_indices], 0)
+                default_snr = -100  
+                mask[~nonzero_indices] = default_snr
+
+                # 将掩码应用于混合信号的时频表示
+                Zsamplesmaked = np.multiply(Zmixed_series, mask)
+
+                #将信号由频域恢复到时间域
+                _, samplesrec = signal.istft(Zsamplesmaked, sample_rate_1)
+
+                def mixed_image(ax):
+                    # 绘制三段音频的图像
+                    x = np.arange(0, len(mixed_series) / sample_rate_1, 1 / sample_rate_1)
+                    ax.plot(x, samples_1, color="blue", alpha=0.6)
+                    ax.plot(x, samples_2, color="red", alpha=0.6)
+                    ax.set(xlabel='时间 [秒]', ylabel='振幅')
+                    ax.legend(['信号1', '信号2'])
+
+                def spectrogram_image(ax):
+                    # 绘制三段音频的振幅、频谱图
+                    ax.pcolormesh(t1, f1, np.abs(Zsamples1))
+                    ax.set(title='信号 1', xlabel='时间 [秒]')
+
+                def mask_image(ax):
+                    # 掩码图像
+                    masked_values = np.ma.masked_where(mask == default_snr, mask)
+                    ax.imshow(masked_values, cmap='Greys', interpolation='none', vmin=0, vmax=1)
+
+                def comparison_image_sample_1(ax):
+                    x = np.arange(0, len(mixed_series) / sample_rate_1, 1 / sample_rate_1)
+                    ax.plot(x, sample, color="red", alpha=0.6)
+                    ax.plot(x, samplesrec, color="blue", alpha=0.4)
+                    ax.set(xlabel='时间 [秒]', ylabel='信号')
+                    ax.legend(['原始信号', '恢复信号'])
+
+
+                fig, axes = plt.subplots(3, 1, figsize=(8, 6))
+                mixed_image(axes[0])
+                mask_image(axes[1])
+                comparison_image_sample_1(axes[2])
+                plt.tight_layout()
+                # 保存图像到文件
+                desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                mask_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", "mask_plot_1.png")
+                axes[1].figure.savefig(mask_path)
+                plt.close(axes[1].figure)  # 关闭图像窗口
+
+
+            def separation_plot_2(file_1,file_2):
+                #将两段音频进行合并
+                sample_rate_1, samples_1 = wavfile.read(file_1)
+                sample_rate_2, samples_2 = wavfile.read(file_2)
+                maxlength = max(len(samples_1),len(samples_2))
+                samples_1 = np.pad(samples_1, (0, maxlength - len(samples_1)), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0, maxlength - len(samples_2)), 'constant', constant_values=(0))
+                mixed_series = samples_1 + samples_2
+                extrapadding = (ceil(len(mixed_series) / sample_rate_1) * sample_rate_1) - len(mixed_series)
+                mixed_series = np.pad(mixed_series, (0,extrapadding), 'constant', constant_values=(0))
+                samples_1 = np.pad(samples_1, (0,extrapadding), 'constant', constant_values=(0))
+                samples_2 = np.pad(samples_2, (0,extrapadding), 'constant', constant_values=(0))
+
+                #计算三段音频的短时傅里叶变换
+                nperseg = sample_rate_1 / 50
+                f1, t1, Zsamples1 = signal.stft(samples_1, fs=sample_rate_1, nperseg=nperseg)
+                f2, t2, Zsamples2 = signal.stft(samples_2, fs=sample_rate_1, nperseg=nperseg)
+                fmixed, tmixed, Zmixed_series = signal.stft(mixed_series, fs=sample_rate_1, nperseg=nperseg)
+
+                # 创建掩码并应用
+                Zsample = Zsamples2
+                sample = samples_2
+                denominator = np.abs(Zmixed_series)
+                numerator = np.abs(Zsample)
+                mask = np.zeros_like(denominator)
+                nonzero_indices = (denominator != 0)
+                mask[nonzero_indices] = np.around(numerator[nonzero_indices] / denominator[nonzero_indices], 0)
+                default_snr = -100  
+                mask[~nonzero_indices] = default_snr
+
+                # 将掩码应用于混合信号的时频表示
+                Zsamplesmaked = np.multiply(Zmixed_series, mask)
+
+                #将信号由频域恢复到时间域
+                _, samplesrec = signal.istft(Zsamplesmaked, sample_rate_1)
+
+                def mixed_image(ax):
+                    # 绘制三段音频的图像
+                    x = np.arange(0, len(mixed_series) / sample_rate_1, 1 / sample_rate_1)
+                    ax.plot(x, samples_1, color="blue", alpha=0.6)
+                    ax.plot(x, samples_2, color="red", alpha=0.6)
+                    ax.set(xlabel='时间 [秒]', ylabel='振幅')
+                    ax.legend(['信号1', '信号2'])
+
+                def spectrogram_image(ax):
+                    # 绘制三段音频的振幅、频谱图
+                    ax.pcolormesh(t1, f1, np.abs(Zsamples1))
+                    ax.set(title='信号 1', xlabel='时间 [秒]')
+
+                def mask_image(ax):
+                    # 掩码图像
+                    masked_values = np.ma.masked_where(mask == default_snr, mask)
+                    ax.imshow(masked_values, cmap='Greys', interpolation='none', vmin=0, vmax=1)
+
+                def comparison_image_sample_1(ax):
+                    x = np.arange(0, len(mixed_series) / sample_rate_1, 1 / sample_rate_1)
+                    ax.plot(x, sample, color="red", alpha=0.6)
+                    ax.plot(x, samplesrec, color="blue", alpha=0.4)
+                    ax.set(xlabel='时间 [秒]', ylabel='信号')
+                    ax.legend(['原始信号', '恢复信号'])
+
+
+                fig, axes = plt.subplots(3, 1, figsize=(8, 6))
+                mixed_image(axes[0])
+                mask_image(axes[1])
+                comparison_image_sample_1(axes[2])
+                plt.tight_layout()
+                # 保存图像到文件
+                desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                mask_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", "mask_plot_2.png")
+                axes[1].figure.savefig(mask_path)
+                plt.close(axes[1].figure)  # 关闭图像窗口
+
+
+            def show_audio_separation_results(file_1, file_2):
+                # 调用 separation_plot_1 和 separation_plot_2 生成两张图片
+                separation_plot_1(file_1=file_1, file_2=file_2)
+                separation_plot_2(file_1=file_2, file_2=file_1)
+                
+                # 读取这两张图片并存储到一个列表中
+                images = []
+                titles = ["Mask - Plot 1", "Mask - Plot 2"]
+                for i in range(1, 3):
+                    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+                    img_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", f"mask_plot_{i}.png")
+                    img = plt.imread(img_path)
+                    images.append(img)
+                
+                # 在一个图中显示两张图片
+                fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+                
+                for i, ax in enumerate(axes):
+                    ax.imshow(images[i], cmap='gray', extent=[0, 1, 0, 1], aspect='auto')
+                    ax.set_title(titles[i])
+                    ax.axis('off')
+                
+                plt.subplots_adjust(left=0.05, right=0.95, wspace=0.05)
+                
+                plt.show()
+
+
+                    
+
+
+        </pre>
+    </div>
+</body>
+
+<body>
+    <div id="audio-recognition-code">
+        <pre>
+            import os
+            import numpy as np
+            import pandas as pd
+            from PIL import Image
+            from scipy import signal
+            import scipy.io.wavfile as wav
+            import matplotlib.pyplot as plt
+            from pydub import AudioSegment
+            from pydub.silence import split_on_silence
+
+
+            audio_folder = r"C:\\Users\\Administrator\\Desktop\\LF\\LS\\datasets\\audio"
+            img_folder   = r"datasets\\img"
+            output_file  = "datasets\\attributes\\image_attributes.txt"
+
+
+
+            def statistics(text_path):
+                data = pd.read_csv(text_path, delimiter=":", header=None, encoding='GBK')
+                data.columns = ['属性', '值']
+
+                # 分辨率统计
+                resolution_data = data[data['属性'].str.strip() == '分辨率']
+                resolution_values = resolution_data['值'].str.strip().str.split('x', expand=True).astype(int)
+                average_resolution = resolution_values.mean()
+                max_resolution = resolution_values.max()
+                min_resolution = resolution_values.min()
+
+                # 颜色模式统计
+                color_mode_data = data[data['属性'].str.strip() == '颜色模式']
+                color_mode_counts = color_mode_data['值'].str.strip().value_counts()
+
+                # 文件格式统计
+                file_format_data = data[data['属性'].str.strip() == '文件格式']
+                file_format_counts = file_format_data['值'].str.strip().value_counts()
+
+                # 文件大小统计
+                file_size_data = data[data['属性'].str.strip() == '文件大小']
+                file_size_values = file_size_data['值'].str.strip().str.extract('(\d+)').astype(int)
+                average_file_size = file_size_values.mean()
+                max_file_size = file_size_values.max()
+                min_file_size = file_size_values.min()
+
+
+                # 定义保存统计信息的txt文件路径
+                output_stats_file = "datasets\\attributes\\image_statistics.txt"
+
+                # 写入统计信息到txt文件
+                with open(output_stats_file, 'w') as file:
+                    file.write("分辨率统计:\n")
+                    file.write(f"平均分辨率: {average_resolution}\n")
+                    file.write(f"最大分辨率: {max_resolution}\n")
+                    file.write(f"最小分辨率: {min_resolution}\n\n")
+
+                    file.write("颜色模式统计:\n")
+                    file.write(f"{color_mode_counts}\n\n")
+
+                    file.write("文件格式统计:\n")
+                    file.write(f"{file_format_counts}\n\n")
+
+                    file.write("文件大小统计:\n")
+                    file.write(f"平均文件大小: {average_file_size} bytes\n")
+                    file.write(f"最大文件大小: {max_file_size} bytes\n")
+                    file.write(f"最小文件大小: {min_file_size} bytes\n")
+
+
+            def img_attributes(img_folder):
+                with open(output_file,'w') as file:
+                    for filename in os.listdir(img_folder):
+                        if filename.endswith(".png"):
+                            file_path = os.path.join(img_folder,filename)
+                            image = Image.open(file_path)
+
+                            width, height   = image.size                    # 频谱图宽度、高度
+                            num_channels    = len(image.getbands())         # 频谱图颜色通道数
+                            image_mode      = image.mode                    # 图像的颜色模式
+                            image_format    = image.format                  # 图像的文件格式
+                            image_size      = os.path.getsize(file_path)    # 图像文件大小（字节）
+
+                            file.write(f"文件名:        {filename}\n")
+                            file.write(f"分辨率:        {width} x {height}\n")
+                            file.write(f"颜色模式:      {image_mode}\n")
+                            file.write(f"文件格式:      {image_format}\n")
+                            file.write(f"文件大小:      {image_size} bytes\n")
+                            file.write(f"颜色通道数:    {num_channels}\n")
+                            file.write("-" * 30 + "\n")  
+
+
+            def channel_process(img_folder):
+                for filename in os.listdir(img_folder):
+                    if filename.endswith(".png"):
+                        file_path = os.path.join(img_folder, filename)
+                        image = Image.open(file_path)
+                        image = image.convert('RGB') 
+                        save_path = "datasets\\img\\"
+                        file_name = filename
+                        save_img  = os.path.join(save_path,file_name)
+                        image.save(save_img)
+                        print("正在处理频谱图：",file_name)
+
+
+            def label(img_folder):
+                audio_files = os.listdir(img_folder)
+                labels = [file.split('_')[0] for file in audio_files]
+                label_df = pd.DataFrame({'Filename': audio_files, 'Label': labels})
+                label_df.to_csv("datasets\\label\\labels.csv", index=False)
+
+
+            def mute_processing(audio_file):
+                audio = AudioSegment.from_wav(audio_file)
+                background_noise = audio.dBFS
+                min_silence_len = 100
+                silence_threshold = background_noise - 10
+                segments = split_on_silence(audio, min_silence_len=min_silence_len, silence_thresh=silence_threshold)
+                non_silent_audio = AudioSegment.empty()
+                for segment in segments:
+                    non_silent_audio += segment
+
+                return non_silent_audio
+
+
+            def spec(audio_folder):
+                for filename in os.listdir(audio_folder):
+                    if filename.endswith(".wav"):
+                        file_path = os.path.join(audio_folder, filename)
+
+                        sample_rate = mute_processing(audio_file = file_path).frame_rate
+                        audio_data = np.array(mute_processing(audio_file=file_path).get_array_of_samples())
+
+                        f, t, Sxx = signal.spectrogram(audio_data, fs=sample_rate, nperseg=512, noverlap=256, nfft=1024)
+                        save_path = "datasets\\img\\"
+                        file_name = filename.replace(".wav",".png")
+                        save_img  = os.path.join(save_path,file_name)
+                        plt.figure(figsize=(8, 6))
+                        plt.pcolormesh(t, f, 10 * np.log10(Sxx))
+                        plt.axis('off') 
+                        plt.savefig(save_img, bbox_inches='tight', pad_inches=0, dpi=256, format='png', transparent=False)
+                        plt.close()
+
+                        print("正在处理：",file_path)
+
+            ---------------------------------------------------------------------
+            from tensorflow import keras
+
+            def cnn_model(X_train, y_train,tensorboard_callback ):
+                model = keras.Sequential([
+                    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(256, 256, 3)),
+                    keras.layers.MaxPooling2D((2, 2)),
+                    keras.layers.Flatten(),
+                    keras.layers.Dense(128, activation='relu'),
+                    keras.layers.Dense(5, activation='softmax')  
+                ])
+
+                model.compile(optimizer='adam',
+                            loss='categorical_crossentropy',
+                            metrics=['accuracy']
+                            )
+                
+                model.fit(X_train, y_train, epochs=150, batch_size=32, validation_split=0.3,callbacks=[tensorboard_callback])
+                model.save("datasets\\model\\cnn_model.h5")
+
+                return model
+
+                ---------------------------------------------------------------------
+                import os
+                import model_L
+                import numpy as np
+                import pandas as pd
+                import tensorflow as tf
+                from tensorflow import keras
+                from sklearn.preprocessing import LabelEncoder
+                from sklearn.model_selection import train_test_split
+
+
+                import tensorboard
+
+
+                labels_df = pd.read_csv("datasets\\label\\labels.csv")
+
+                file_names = labels_df['Filename'].values
+                labels = labels_df['Label'].values
+
+
+                try:
+                    data = np.load("datasets\\datanpy\\img_data.npy")
+                    print("已成功加载保存的频谱图数据")
+                except FileNotFoundError:
+                    print("未找到保存的频谱图数据，正在重新加载...")
+                    data = []
+                    for file_name in file_names:
+                        img_path = os.path.join("datasets\\img\\",file_name)
+                        img = keras.preprocessing.image.load_img(img_path, target_size=(256, 256))
+                        img_array = keras.preprocessing.image.img_to_array(img)
+                        data.append(img_array)
+                        print("正在处理：",file_name)
+                    data = np.array(data)
+                    np.save("datasets\\datanpy\\img_data.npy", data)
+
+
+                encoder = LabelEncoder()
+                labels_encoded = encoder.fit_transform(labels)
+                labels_encoded = tf.keras.utils.to_categorical(labels_encoded)
+
+                # 划分数据集
+                X_train, X_test, y_train, y_test = train_test_split(
+                    data, 
+                    labels_encoded, 
+                    test_size=0.3, 
+                    random_state=42,
+                    shuffle=True
+                    )
+
+                # 训练模型
+                tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir="logs")
+
+                model = model_L.cnn_model(X_train,y_train,tensorboard_callback )
+
+                # 在测试集上评估模型
+                test_loss, test_acc = model.evaluate(X_test, y_test)
+                print(f"Test accuracy: {test_acc}")
+
+
+
+
+
+        </pre>
+    </div>
+</body>
+
 
 </html>

@@ -1,3 +1,4 @@
+import os
 import winsound
 import matplotlib
 import numpy as np
@@ -78,7 +79,9 @@ def separation_plot_1(file_1,file_2):
     comparison_image_sample_1(axes[2])
     plt.tight_layout()
     # 保存图像到文件
-    axes[1].figure.savefig('Separation\\scratch_file\\mask_plot_1.png')
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    mask_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", "mask_plot_1.png")
+    axes[1].figure.savefig(mask_path)
     plt.close(axes[1].figure)  # 关闭图像窗口
 
 
@@ -150,7 +153,9 @@ def separation_plot_2(file_1,file_2):
     comparison_image_sample_1(axes[2])
     plt.tight_layout()
     # 保存图像到文件
-    axes[1].figure.savefig('Separation\\scratch_file\\mask_plot_2.png')
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    mask_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", "mask_plot_2.png")
+    axes[1].figure.savefig(mask_path)
     plt.close(axes[1].figure)  # 关闭图像窗口
 
 
@@ -163,7 +168,9 @@ def show_audio_separation_results(file_1, file_2):
     images = []
     titles = ["Mask - Plot 1", "Mask - Plot 2"]
     for i in range(1, 3):
-        img = plt.imread(f'Separation\\scratch_file\\mask_plot_{i}.png')
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        img_path = os.path.join(desktop_path, "Dsp", "Separation", "scratch_file", f"mask_plot_{i}.png")
+        img = plt.imread(img_path)
         images.append(img)
     
     # 在一个图中显示两张图片

@@ -2,6 +2,9 @@ import os
 import wave
 import tkinter
 import pyaudio
+import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
 def recording_function():#录音函数
     #获取录音时长
@@ -13,7 +16,7 @@ def recording_function():#录音函数
     RATE=44100                          #采样率
     RECORD_SECONDS=duration             #录音时长
     desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-    WAVE_OUTPUT_FILEMAME = os.path.join(desktop_path, "output.wav")   #输出文件
+    WAVE_OUTPUT_FILEMAME = os.path.join(desktop_path, "original_audio.wav")   #输出文件
     #创建一个对象
     audio=pyaudio.PyAudio()
 
@@ -45,7 +48,7 @@ def recording_function():#录音函数
 
 
 def recording_interface():
-    window=tkinter.Toplevel()
+    window=tk.Toplevel()
     window['background']='white'
     window.title("录音程序")
     window.geometry("400x200")
@@ -54,15 +57,15 @@ def recording_interface():
     #添加录音时长输入框
     global duration_var
     duration_var=tkinter.StringVar(value="5")
-    I0=tkinter.Button(window,text='录音时长设置')
+    I0=ttk.Button(window,text='录音时长设置',bootstyle=(INFO, OUTLINE))
     I0.place(x=50,y=20)
     I1=tkinter.Entry(window,textvariable=duration_var,justify='center')
     I1.place(x=150,y=24)
 
     #添加开始录音按钮
-    I2=tkinter.Button(window,text="开始录音",command=recording_function,activebackground='blue')
+    I2=ttk.Button(window,text="开始录音",command=recording_function,bootstyle=(INFO, OUTLINE))
     I2.place(x=50,y=70)
-    I3=tkinter.Button(window,text="文件保存目录")
+    I3=ttk.Button(window,text="文件保存目录",bootstyle=(INFO, OUTLINE))
     I3.place(x=50,y=120)
 
     #添加文件保存路径标签

@@ -1,16 +1,20 @@
+import os
 import wave
 import pyaudio
 import tkinter as tk
 import time
 
 class AudioPlayer:
+    desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+    global icon_path
+    icon_path = os.path.join(desktop_path, "Dsp", "user_Interface", "icon", "001.ico")
     def audioPlayer_interface(self, file_path):
         self.window = tk.Tk()
         self.window.title("播放")
         self.window.geometry("200x100")
         self.window.resizable(0, 0)
         self.window.configure(bg="white")
-        self.window.iconbitmap("user_Interface\\icon\\001.ico")
+        self.window.iconbitmap(default=icon_path)
 
         self.audio = pyaudio.PyAudio()
         self.stream = None

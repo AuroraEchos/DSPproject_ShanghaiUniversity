@@ -37,7 +37,7 @@ def plot_waveforms(file_path):
     logmag = 10 * np.log10(mag)
 
     # 配置子图
-    fig, axs = plt.subplots(2, 1, figsize=(8, 8))
+    fig, axs = plt.subplots(2, 1, figsize=(8, 6))
 
     # 绘制时域波形
     axs[0].plot(time, data, linewidth=0.5,color='red')
@@ -65,3 +65,4 @@ def plot_waveforms(file_path):
 
     # 显示图像
     plt.show()
+

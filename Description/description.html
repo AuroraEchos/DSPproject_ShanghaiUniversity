@@ -36,11 +36,12 @@
         <h2>项目演示</h2>
         <!-- 在此添加项目演示的图片、视频或其他媒体 -->
         <ul>
-            <li>音频录制</li>
-            <li>音频播放</li>
-            <li>语音降噪</li>
-            <li>语音分离</li>
-            <li>语音识别</li>
+            <li><a href="#container1">音频录制</a></li>
+            <li><a href="#container2">音频播放</a></li>
+            <li><a href="#container3">语音降噪</a></li>
+            <li><a href="#container4">语音分离</a></li>
+            <li><a href="#container5">语音识别</a></li>
+            <li><a href="#container6">演示视频</a></li>
         </ul>
 
 
@@ -50,23 +51,24 @@
             邮箱：3111013462@qq.com<br>
             电话：15138892159<br>
         </address>
+
+
     </div>
 
     <!--------------------- 音频录制界面 --------------------->
-    
-    <div class="container" id="container">
+    <div class="container" id="container1">
         <h2>音频录制</h2>
         <p>导入模块</p>
         <ul>
-            <li>os:用于获取路径</li>
-            <li>wave:用于处理.wav音频文件</li>
-            <li>tkinter:用于创建图形用户界面</li>
-            <li>pyaudio:用于音频播放</li>
+            <li>os</li>
+            <li>wave</li>
+            <li>tkinter</li>
+            <li>pyaudio</li>
         </ul>
         <p>创建函数</p>
         <ul>
-            <li>recording_function:录音功能函数</li>
-            <li>recording_interface:录音交互界面设计</li>
+            <li>recording_function</li>
+            <li>recording_interface</li>
         </ul>
         <p>相关代码</p>
         <div class="sinking-box">
@@ -75,23 +77,23 @@
     </div>
 
     <!--------------------- 音频播放界面 --------------------->
-    <div class="container" id="container">
+    <div class="container" id="container2">
         <h2>音频播放</h2>
         <p>导入模块</p>
         <ul>
-            <li>time:用于处理时间</li>
-            <li>wave:用于处理.wav音频文件</li>
-            <li>tkinter:用于创建图形用户界面</li>
-            <li>pyaudio:用于音频播放</li>
+            <li>time</li>
+            <li>wave</li>
+            <li>tkinter</li>
+            <li>pyaudio</li>
         </ul>
         <p>创建函数</p>
         <ul>
-            <li>stop_play:停止音频播放并关闭音频流</li>
-            <li>play_audio:在播放状态下，不断从音频文件中读取帧并通过音频流播放</li>
-            <li>toggle_play:处理播放按钮的点击事件，切换播放和暂停状态</li>
-            <li>update_time:更新界面上的已播放时间</li>
-            <li>pause_audio:暂停音频播放</li>
-            <li>audioPlayer_interface:创建用户界面，包括播放按钮、停止按钮和时间标签</li>
+            <li>stop_play</li>
+            <li>play_audio</li>
+            <li>toggle_play</li>
+            <li>update_time</li>
+            <li>pause_audio</li>
+            <li>audioPlayer_interface</li>
         </ul>
         <p>相关代码</p>
         <div class="sinking-box">
@@ -99,44 +101,101 @@
         </div>
     </div>
 
-
-
-
     <!--------------------- 语音降噪界面 --------------------->
-    <header>
-        <h1>项目演示</h1>
-    </header>
-    <div class="container" id="container">
+    <div class="container" id="container3">
         <h2>语音降噪</h2>
+        <p>导入模块</p>
+        <ul>
+            <li>expn</li>
+            <li>wave</li>
+            <li>math</li>
+            <li>scipy</li>
+        </ul>
+        <p>创建函数</p>
+        <ul>
+            <li>logmmse</li>
+            <li>_logmmse</li>
+            <li>denoise</li>
+            <li>mono_logmmse</li>
+        </ul>
+        <p>相关代码</p>
         <div class="sinking-box">
-
-
+            <iframe src="code.html#audio-denoise-code" frameborder="0" width="100%" height="300"></iframe>
         </div>
         
     </div>
 
-
     <!--------------------- 语音分离界面 --------------------->
-    <header>
-        <h1>项目演示</h1>
-    </header>
-    <div class="container" id="container">
+    <div class="container" id="container4">
         <h2>语音分离</h2>
-        
+        <p>导入模块</p>
+        <ul>
+            <li>ceil</li>
+            <li>signal</li>
+            <li>wavfile</li>
+            <li>winsound</li>
+            <li>matplotlib</li>
+        </ul>
+        <p>创建函数</p>
+        <ul>
+            <li>merge_files</li>
+            <li>audio_separation</li>
+            <li>singleaudio_mergeseparation</li>
+            <li>show_audio_separation_results</li>
+        </ul>
+        <p>相关代码</p>
+        <div class="sinking-box">
+            <iframe src="code.html#audio-separation-code" frameborder="0" width="100%" height="300"></iframe>
+        </div>
     </div>
 
     <!--------------------- 语音识别界面 --------------------->
-    <header>
-        <h1>项目演示</h1>
-    </header>
-    <div class="container" id="container">
+    <div class="container" id="container5">
         <h2>语音识别</h2>
+        <p>导入模块</p>
+        <ul>
+            <li>tensorflow</li>
+            <li>tensorboard</li>
+            <li>LabelEncoder</li>
+            <li>train_test_split</li>
+        </ul>
+        <p>创建函数</p>
+        <ul>
+            <li>spec</li>
+            <li>label</li>
+            <li>cnn_model</li>
+            <li>mute_processing</li>
+            <li>channel_process</li>
+        </ul>
+        <p>相关代码</p>
+        <div class="sinking-box">
+            <iframe src="code.html#audio-recognition-code" frameborder="0" width="100%" height="300"></iframe>
+        </div>
         
     </div>
     
+    <!--------------------- 视频演示 --------------------->
+    <div class="container" id="container6" >
+        <h2>演示视频</h2>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <video controls width="640" height="360" controls autoplay>
+                <source src="C:\\Users\\Administrator\\Desktop\\Dsp\\Description\\element\\operation.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+    
+
+
     <script>
         //---------------------------------------------------------------------渐变效果
         const container = document.getElementById("container");
+        const container1 = document.getElementById("container1");
+        const container2 = document.getElementById("container2");
+        const container3 = document.getElementById("container3");
+        const container4 = document.getElementById("container4");
+        const container5 = document.getElementById("container5");
+        const container6 = document.getElementById("container6");
         window.addEventListener("scroll", () => {
             // 根据滚动位置来调整透明度
             const scrollY = window.scrollY;
@@ -144,6 +203,7 @@
             const opacity = 0.8 - (scrollY / maxScroll) * 0.8; // 计算透明度
             // 设置容器的透明度
             container.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+
         });
 
         //---------------------------------------------------------------------标题渐出
@@ -173,8 +233,28 @@
             });
         });
 
+        //---------------------------------------------------------------------选择路径
+        function selectVideo() {
+            // 触发文件选择对话框
+            document.getElementById("videoInput").click();
+        }
+
+        document.getElementById("videoInput").addEventListener("change", function() {
+            // 获取用户选择的文件
+            const selectedFile = this.files[0];
+
+            // 创建URL对象以用于视频播放
+            const videoURL = URL.createObjectURL(selectedFile);
+
+            // 显示视频播放器并设置视频源
+            const videoPlayer = document.getElementById("videoPlayer");
+            videoPlayer.style.display = "block";
+            videoPlayer.src = videoURL;
+        });
 
 
     </script>
+
+
 </body>
 </html>

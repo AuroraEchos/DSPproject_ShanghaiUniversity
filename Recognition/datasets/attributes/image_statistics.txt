@@ -1,0 +1,26 @@
+分辨率统计:
+平均分辨率: 0    1587.0
+1    1182.0
+dtype: float64
+最大分辨率: 0    1587
+1    1182
+dtype: int32
+最小分辨率: 0    1587
+1    1182
+dtype: int32
+
+颜色模式统计:
+RGB    1200
+Name: 值, dtype: int64
+
+文件格式统计:
+PNG    1200
+Name: 值, dtype: int64
+
+文件大小统计:
+平均文件大小: 0    731922.9375
+dtype: float64 bytes
+最大文件大小: 0    911068
+dtype: int32 bytes
+最小文件大小: 0    151729
+dtype: int32 bytes

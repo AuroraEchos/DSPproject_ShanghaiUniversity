@@ -6,7 +6,7 @@
     margin: 0;
     padding: 0;
     background-color: #f2f2f2;
-    background-image: url('element/background_1.jpg');
+    background-image: url('element/background.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -18,7 +18,7 @@
     margin: 0;
     padding: 0;
     background-color: #f2f2f2;
-    background-image: url('element/background_2.jpg');
+    background-image: url('element/background.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -29,7 +29,7 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f2f2f2;
-    background-image: url('element//background_2.jpg'); 
+    background-image: url('element//background.jpg'); 
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -104,3 +104,26 @@ header h1 span {
         color: #080808;
     }
 }
+
+button{
+    background-color:rgb(193, 196, 200);
+	outline:none;	/*点击后没边框*/
+    width: 90px;
+    height: 47px;
+    font-size: 16px;
+}
+
+
+ul {
+    list-style-type: none; /* 移除列表项的默认样式 */
+}
+
+li {
+    margin-top: 10px; /* 设置链接上边距 */
+    margin-right: 30px; /* 调整链接之间的右边距 */
+}
+
+a {
+    text-decoration: none; /* 移除链接的下划线 */
+}
+

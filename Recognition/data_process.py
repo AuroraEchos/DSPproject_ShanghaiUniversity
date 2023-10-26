@@ -11,13 +11,13 @@ def data_process(labels_path):
 
     data = []
     for file_name in file_names:
-        img_path = os.path.join("datasets\\img\\",file_name)
+        img_path = os.path.join("Recognition\\datasets\\img\\",file_name)
         img = keras.preprocessing.image.load_img(img_path, target_size=(256, 256))
         img_array = keras.preprocessing.image.img_to_array(img)
         data.append(img_array)
         print("正在处理：",file_name)
     data = np.array(data)
-    np.save("datasets\\datanpy\\img_data.npy", data)
+    np.save("Recognition\\datasets\\datanpy\\img_data.npy", data)
 
-labels_path = "datasets\\label\\labels.csv"
+labels_path = "Recognition\\datasets\\label\\labels.csv"
 data_process(labels_path)
